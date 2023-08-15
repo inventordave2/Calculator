@@ -14,8 +14,8 @@
 "print"				{ return PRINT; }
 "+"					{ return PLUS; }
 "-"					{ return MINUS; }
-"*"					{ return MUL; }
-"/"					{ return DIV; }
+"*"					{ return _MUL; }
+"/"					{ return _DIV; }
 "^"					{ return POW; }
 "="					{ return EQUALS; }
 "("					{ return OB; }

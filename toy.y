@@ -18,11 +18,11 @@
     int		val;
 }
 
-%token NUM ID OTHER PLUS MINUS MUL DIV EQUALS NL SP TAB POW OB CB PRINT
+%token NUM ID OTHER PLUS MINUS _MUL _DIV EQUALS NL SP TAB POW OB CB PRINT
 
 %right EQUALS
 %left  PLUS MINUS
-%left  MUL DIV
+%left  _MUL _DIV
 %left  POW
 
 %type<val> exp NUM
@@ -37,8 +37,8 @@ s: exp | line | line exp
 exp : PRINT			{ printVars(); }
 	| NUM     {$$ = $1; }
     | ID        {$$ = vars[(unsigned int)$1]; }
-	| exp MUL exp  {$$ = $1 * $3; printf("\t\tResult of %d * %d is: %d\n", $1, $3, $$); }
-    | exp DIV exp  {$$ = $1 / $3; printf("\t\tResult of %d / %d is: %d\n", $1, $3, $$); }
+	| exp _MUL exp  {$$ = $1 * $3; printf("\t\tResult of %d * %d is: %d\n", $1, $3, $$); }
+    | exp _DIV exp  {$$ = $1 / $3; printf("\t\tResult of %d / %d is: %d\n", $1, $3, $$); }
     | exp PLUS exp  {$$ = $1 + $3; printf("\t\tResult of %d + %d is: %d\n", $1, $3, $$); }
     | exp MINUS exp  {$$ = $1 - $3; printf("\t\tResult of %d - %d is: %d\n", $1, $3, $$); }
     | ID EQUALS exp  {$$ = vars[toNumber($1)] = $3; printf("\t\t\tvars[%c] = %d.\n", $1, $$); } 

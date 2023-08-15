@@ -1,36 +1,5 @@
 %{
-    #include <stdio.h>
-	#include <stdlib.h>
-	#include <math.h>
-	#include <string.h>
-	#include <float.h>
-	
-	#include "toyf.tab.h"
-	
-    int yylex();
-    int yyerror(const char*);
-	
-	void printVars();
-	char *convert(double x);
-	char *trim(double x);
-	char *(*function)(); 
-	
-	short int truthy(double);
-	
-	double _FALSE;
-	double _TRUE;
-	double _Null;
-	short int truthyFlag;
-	
-	double vars[256] = { -10000 };
-	char*  evars[256] = { '\0' };
-	
-	short int optionsFlag = 0;
-	
-	char* enum_str;
-	extern double generateExpValue(char *);
-	
-	#define NUM_STRING_LENGTH 325 // max length of fp (double) number, including decimal point. Obvs is way less than 100.
+ #include "toyf_h.c"
 
 %}
 
@@ -43,7 +12,7 @@
 	int				lo_;
 }
 
-%token NUM ENUM ID OTHER PLUS MINUS MUL DIV EQUALS NL SP TAB POW OB CB COMMA PRINT OPTIONSET OPTIONUNSET TRUE FALSE
+%token NUM ENUM ID OTHER PLUS MINUS _MUL _DIV EQUALS NL SP TAB POW OB CB COMMA PRINT OPTIONSET OPTIONUNSET TRUE FALSE
 
 %token LOGICAL_EQ BOOLEAN_LOGICAL_AND BOOLEAN_BITWISE_AND BOOLEAN_LOGICAL_OR BOOLEAN_BITWISE_OR BOOLEAN_LOGICAL_NOT BOOLEAN_BITWISE_NOT BOOLEAN_LOGICAL_EXC_OR BOOLEAN_BITWISE_EXC_OR 
 
@@ -53,7 +22,7 @@
 %right LOGICAL_EQ BOOLEAN_LOGICAL_AND BOOLEAN_BITWISE_AND BOOLEAN_LOGICAL_OR BOOLEAN_BITWISE_OR BOOLEAN_LOGICAL_NOT BOOLEAN_BITWISE_NOT BOOLEAN_LOGICAL_EXC_OR BOOLEAN_BITWISE_EXC_OR
 
 %left  PLUS MINUS
-%left  MUL DIV
+%left  _MUL _DIV
 %left  POW
 
 %type<val> exp power_f NUM options ENUM TRUE FALSE
@@ -199,15 +168,15 @@ exp : PRINT		{ printVars(); printf("\n\nOption to trim numbers set? %s.\n", opti
 
 
 
-	| exp MUL exp  { if ($1 == _TRUE) { $1 = 1.0; } else if ($1 == _FALSE) { $1 = 0.0; };
+	| exp _MUL exp  { if ($1 == _TRUE) { $1 = 1.0; } else if ($1 == _FALSE) { $1 = 0.0; };
 					if ($3 == _TRUE) { $3 = 1.0; } else if ($3 == _FALSE) { $1 = 0.0; };
-					if ($1 == _Null) { $1 = 0.0; } else if ($1 == _Null)  { $1 = 0.0; };
-					if ($3 == _Null) { $3 = 0.0; } else if ($3 == _Null) { $3 = 0.0; };
+					if ($1 == _Null) { $1 = 0.0; };
+					if ($3 == _Null) { $3 = 0.0; };
 					$$ = $1 * $3; printf("\t\tResult of %s * %s is: %s\n", function($1), function($3), function($$)); }
-    | exp DIV exp  { if ($1 == _TRUE) { $1 = 1.0; } else if ($1 == _FALSE) { $1 = 0.0; };
+    | exp _DIV exp  { if ($1 == _TRUE) { $1 = 1.0; } else if ($1 == _FALSE) { $1 = 0.0; };
 					if ($3 == _TRUE) { $3 = 1.0; } else if ($3 == _FALSE) { $3 = 0.0; };
-					if ($1 == _Null) { $1 = 0.0; } else if ($1 == _Null)  { $1 = 0.0; };
-					if ($3 == _Null) { $3 = 0.0; } else if ($3 == _Null) { $3 = 0.0; };
+					if ($1 == _Null) { $1 = 0.0; };
+					if ($3 == _Null) { $3 = 0.0; };
 	
 					$$ = $1 / $3; printf("\t\tResult of %s / %s is: %s\n", function($1), function($3), function($$)); }
     | exp PLUS exp  { if ($1 == _TRUE) { $1 = 1.0; } else if ($1 == _FALSE) { $1 = 0.0; };
@@ -215,7 +184,15 @@ exp : PRINT		{ printVars(); printf("\n\nOption to trim numbers set? %s.\n", opti
 					if ($1 == _Null) { $1 = 0.0; } else if ($1 == _Null)  { $1 = 0.0; };
 					if ($3 == _Null) { $3 = 0.0; } else if ($3 == _Null) { $3 = 0.0; };
 	
-					$$ = $1 + $3; printf("\t\tResult of %s + %s is: %s\n", function($1), function($3), function($$)); }
+	
+					// here...
+					AP a = new_ap(20,0), b = new_ap(20,0);
+				    strcpy(a.major, function($1));
+					// a.major = strdup( function($1) );
+					strcpy(b.major, function($3));
+					
+					AP c = ADD(a,b);
+					$$ = atoi(c.major); printf("\t\tResult of %s + %s is: %s\n", function($1), function($3), c.major); }
     | exp MINUS exp  {
 					if ($1 == _TRUE) { $1 = 1.0; } else if ($1 == _FALSE) { $1 = 0.0; };
 					if ($3 == _TRUE) { $3 = 1.0; } else if ($3 == _FALSE) { $3 = 0.0; };
@@ -474,191 +451,5 @@ options: OPTIONSET { $$ = 1.0; optionsFlag = 1; printf("Option to trim number se
 
 %%
 
-void printVars()	{
+#include "zecode.c"
 
-	int i;
-	
-	for(i='A';i<'z';i++)	{
-	
-		if(vars[i]!=_Null)
-			printf("vars[%c] = %s\n", (char) i, function(vars[i]));
-			
-	}	
-	
-			
-	printf("\n");
-	
-	for(i='A';i<'z';i++)
-		if(strcmp(evars[i],""))	{
-			//printf("we're in, by jove!\n");
-			printf("Evars[%c] = %s\n", (char) i, evars[i]);
-		}
-			
-			
-}
-
-short int truthy(double i)	{
-
-	if ( (i != _FALSE) && (i != _Null) && (i != 0.0) )
-		return 1;
-		
-	return 0;
-}
-
-char *convert(double x)	{
-
-	char *buf = malloc(NUM_STRING_LENGTH);
-	
-	if (x == _FALSE)	{
-	
-		buf = strdup("false");
-		return buf;
-	}
-	
-	if (x == _TRUE)	{
-	
-		buf = strdup("true");
-		return buf;
-	}
-	
-	if (x == _Null)	{
-	
-		buf = strdup("(empty)");
-		return buf;
-	}
-	
-	sprintf(buf, "%.15f", x);
-	
-	int offset = strlen(buf)-1;
-	
-	for(int i = offset; i >= 0; i--)	{
-	
-		if(buf[i]=='0')
-			offset = i;
-			
-		else
-			break;
-	}
-
-	// offset contains buf[n] offset of last non-zero digit
-	if(buf[offset-1]=='.')
-		offset--;
-		
-	buf[offset] = '\0';
-	
-	return buf;
-}
-
-
-/*
-The trim(x) function is superfluous, but I leave it for historical reasons. There is no need to generate a string with trailing 0's
-removed, as convert(x) does exactly the same thing. The difference with trim(x) is that trim(x) trims the string at
-any contiguous sequence of 2 0's, for prettiness reasons, losing precision of the printed number.
-*/
-char *trim(double x)
-{
-    char *buf = malloc(NUM_STRING_LENGTH);
-	
-	if (x == _FALSE)	{
-	
-		buf = strdup("false");
-		return buf;
-	}
-	
-	if (x == _TRUE)	{
-	
-		buf = strdup("true");
-		return buf;
-	}
-	
-	if (x == _Null)	{
-	
-		buf = strdup("(empty)");
-		return buf;
-	}
-	
-    sprintf(buf, "%.15f", x);
-	
-	int offset = 0;
-	int count = 0;
-	short int flag = 0;
-	
-	
-	for(int i=0;i<strlen(buf);i++)	{
-	
-		if(buf[i]=='.')	{
-		
-			flag++;
-			continue;
-		}
-		
-		if((buf[i]=='0')&&(flag>=1))	{
-		
-			if(count==0)
-				offset = i;
-				
-			count++;
-			
-			
-			if(count>=2)
-				break;
-			
-			// this will (in the next if-construct), essentially round off the number after a sequence of 2 0's in it's string. Bit weird, lol.
-			// I just remembered my reasoning. If an operand has a stupid trailing string, such 2.34500000001, it would round it, effectively to
-			// 2.34500, which thinking about it now, is fucking stupid of me, because I am not converting c-strings back to doubles, and we would
-			// want to see the number printed as 2.345
-			
-		}
-		else
-			count = 0;
-			
-		
-	}
-	
-	if (count)	{
-	
-		if(buf[offset-1]=='.')
-			offset--;
-		// need to truncate
-		buf[offset] = '\0';
-	}
-
-    return buf;
-}
-
-
-int main()
-{
-
-	function = convert;
-	
-	enum_str = (char *)calloc(NUM_STRING_LENGTH + 1 + NUM_STRING_LENGTH, 1);
-	
-	_FALSE = -DBL_MAX;
-	_TRUE = DBL_MAX;
-	_Null = DBL_MAX - 1;
-	
-	int i;
-	
-	for(i = 0; i < 256; i++)	{
-	
-		evars[i] = (char *)calloc(100, 1);
-		vars[i] = _Null;
-	}
-	
-	truthyFlag = 0;
-	// (*((long long*)&_FALSE))= ~(1LL<<52); // this bloody method didnt work
-	
-	//printf("_Null == %s\n\n", function(_Null));
-
-	optionsFlag = 1; printf("Option to trim number set. Use 'unsetoption' to set number printing to verbose.\n"); function = trim;
-	
-	yyparse();
-    return 0;
-}
-
-int yyerror(const char *s)
-{
-	printf("Error: %s\n", s);
-	return 0;
-}
